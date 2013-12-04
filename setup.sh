@@ -1,27 +1,34 @@
 #!/bin/bash
 
-cd Personal_Data
+if [ -d "./Personal_Data" ]; then
+    echo "Setup folder already exist so won't overwrite. Please delete the folder ./Personal_Data if you want to re-setup"
+else
+    mkdir Personal_Data
 
-echo "Creating nessasary files in ./Personal_Data"
-echo "Please overwrite them without changing filenames."
+    cd Personal_Data
 
-# Gmail account setting
-printf "userName = 'YourUserName@gmail.com'\n" >  gmail_account.txt
-printf "passWord = 'YourPassWord'" >>  gmail_account.txt
+    echo "Creating nessasary files in ./Personal_Data"
+    echo "Please overwrite them without changing filenames"
 
-# CV template
-touch CV.html
+    # Gmail account setting
+    printf "userName = 'YourUserName@gmail.com'\n" >  gmail_account.txt
+    printf "passWord = 'YourPassWord'" >>  gmail_account.txt
 
-# Recipient's information
-touch info_list.xls
+    # CV template
+    touch CV.html
 
-# Personal Resume
-touch Resume.pdf
+    # Recipient's information
+    touch info_list.xls
 
-# Transcript is an option
-touch Transcript.pdf
+    # Personal Resume
+    touch Resume.pdf
 
-# GRE score is an option
-touch GRE.pdf
+    # Transcript is an option
+    touch Transcript.pdf
 
-echo "Done!"
+    # GRE score is an option
+    touch GRE.pdf
+
+    echo "Done!"
+
+fi
