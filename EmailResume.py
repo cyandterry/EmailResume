@@ -31,26 +31,36 @@ def extract_application():
     # 5. recip_email
     # 6. attach transcript
     # 7. attach GRE
-    pass
+    read_book = open_workbook('./Personal_Data/application_info.xls')
+    r_sheet = read_book.sheet_by_index(0)
+    info_list = []
+    for row_index in range(1, r_sheet.nrows):
+        info_list.append( dict(
+            company_name = r_sheet.cell(row_index, 0).value,
+            job_title    = r_sheet.cell(row_index, 1).value,
+            contact_name = r_sheet.cell(row_index, 2).value,
+            recip_email  = r_sheet.cell(row_index, 3).value,
+            att_trans    = r_sheet.cell(row_index, 4).value,
+            att_gre      = r_sheet.cell(row_index, 5).value,
+            ))
+    return info_list
 
 # should accept 1. list from extract_application
 #               2. email contend that rendered to CV
+
+def render_CL(info):
+    pass
 
 def gen_log():
     pass
 
 
-def sendEmail():
+def sendEmail( recip_email, subject, msg):
     # Every email address should render the CV template and load info
 
-    # Read Cover Letter
-    fp = open("./Personal_Data/CV.html")
-    msg = MIMEText(fp.read(), 'html')
-    fp.close()
-
-    msg['Subject'] = 'The contents of test'
+    msg['To'] = recip_email
+    msg['Subject'] = subject
     msg['From'] = username
-    msg['To'] = 'qianyuzh@buffalo.edu'
 
     server = smtplib.SMTP('smtp.gmail.com:587')
     server.starttls()
@@ -67,8 +77,21 @@ def main():
     global password
     password = f.readline().split("=")[1].strip()
     f.close()
-    sendEmail()
     #gen_temp()
+    info_list = extract_application()
+    for info in info_list:
+        # Render data to template cover letter
+        # Render data to subject
+
+        # Read Cover Letter
+        fp = open("./Personal_Data/CV.html")
+        msg = MIMEText(fp.read(), 'html')
+        fp.close()
+        subject = "This is a first test"
+        sendEmail( info['recip_email'], subject, msg)
+        # log the sending info
+    #sendEmail()
+
 
 if __name__ == '__main__':
     main()
