@@ -6,6 +6,7 @@ from xlutils.copy import copy
 from xlwt import Workbook, easyxf
 from xlrd import open_workbook, cellname
 from time import gmtime, strftime
+import datetime
 
 username  = None
 password  = None
@@ -47,9 +48,6 @@ def extract_application():
             ))
     return info_list
 
-# should accept 1. list from extract_application
-#               2. email contend that rendered to CV
-
 def read_gmail_account():
     # Read Account Info
     f = open('./Personal_Data/gmail_account.txt')
@@ -65,8 +63,8 @@ def render_CL(info):
     fp = open('./Personal_Data/CL.html')
     str_data = fp.read()
     fp.close()
-    info['date'] = strftime('%b %d, %Y', gmtime())
-    print info['date']
+    date = datetime.date.today()
+    info['date'] = '%s %d, %s' %(date.strftime('%b'), int(date.strftime('%d')), date.strftime('%Y'))
     for key in info:
         str_data = str_data.replace('{%%%s}' % key, info[key])
     msg = MIMEText(str_data, 'html')
@@ -95,7 +93,7 @@ def main():
     for info in info_list:
         msg = render_CL(info)
         subject = 'Application for %s from %s' % (info['job_title'], real_name)
-        EsendEmail( info['recip_email'], subject, msg)
+        sendEmail( info['recip_email'], subject, msg)
 
 if __name__ == '__main__':
     main()
