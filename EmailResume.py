@@ -7,10 +7,17 @@ from xlwt import Workbook, easyxf
 from xlrd import open_workbook, cellname
 from time import gmtime, strftime
 import datetime
+import argparse
 
 username  = None
 password  = None
 real_name = None
+
+parser = argparse.ArgumentParser(description="An argparse example")
+parser.add_argument('action', help='The action to take (e.g. install, remove, etc.)')
+parser.add_argument('foo-bar', help='Hyphens are cumbersome in positional arguments')
+
+args = parser.parse_args()
 
 def gen_temp():
     app_book = Workbook(encoding='utf-8')
@@ -118,6 +125,8 @@ def sendEmail( recip_email, subject, msg):
     server.quit()
 
 def main():
+
+
     #gen_temp()
     read_gmail_account()
     info_list = extract_application()
