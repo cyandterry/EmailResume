@@ -13,16 +13,28 @@ password  = None
 real_name = None
 
 def gen_temp():
-    book = Workbook(encoding='utf-8')
-    sheet = book.add_sheet('Application Info')
-    sheet.write(0, 0, 'Company Name')
-    sheet.write(0, 1, 'Job Title')
-    sheet.write(0, 2, 'Contact Name')
-    sheet.write(0, 3, 'Contact Address')
-    sheet.write(0, 4, 'Recipient Email')
-    sheet.write(0, 5, 'Transcript')
-    sheet.write(0, 6, 'GRE')
-    book.save('./Personal_Data/application_info.xls')
+    app_book = Workbook(encoding='utf-8')
+    sheet1 = app_book.add_sheet('Application Info')
+    sheet1.write(0, 0, 'Company Name')
+    sheet1.write(0, 1, 'Job Title')
+    sheet1.write(0, 2, 'Contact Name')
+    sheet1.write(0, 3, 'Contact Address')
+    sheet1.write(0, 4, 'Recipient Email')
+    sheet1.write(0, 5, 'Transcript')
+    sheet1.write(0, 6, 'GRE')
+    app_book.save('./Personal_Data/application_info.xls')
+
+    log_book = Workbook(encoding='utf-8')
+    sheet2 = log_book.add_sheet('Application Info')
+    sheet2.write(0, 0, 'Time')
+    sheet2.write(0, 1, 'Company Name')
+    sheet2.write(0, 2, 'Job Title')
+    sheet2.write(0, 3, 'Contact Name')
+    sheet2.write(0, 4, 'Contact Address')
+    sheet2.write(0, 5, 'Recipient Email')
+    sheet2.write(0, 6, 'Transcript')
+    sheet2.write(0, 7, 'GRE')
+    log_book.save('./Personal_Data/log.xls')
 
 def extract_application():
     # Should return a list of dicts
@@ -65,13 +77,32 @@ def render_CL(info):
     fp.close()
     date = datetime.date.today()
     info['date'] = '%s %d, %s' %(date.strftime('%b'), int(date.strftime('%d')), date.strftime('%Y'))
+    info['time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
     for key in info:
         str_data = str_data.replace('{%%%s}' % key, info[key])
     msg = MIMEText(str_data, 'html')
     return msg
 
-def gen_log():
-    pass
+def gen_log(info):
+    read_book = open_workbook('./Personal_Data/log.xls')
+    r_sheet = read_book.sheet_by_index(0)
+    write_book = copy(read_book)
+    w_sheet = write_book.get_sheet(0)
+
+    # Copy read_book to write_book, which copys the existing logs
+    for row_index in range(r_sheet.nrows):
+        for col_index in range(r_sheet.ncols):
+            w_sheet.write(row_index, col_index, r_sheet.cell(row_index, col_index).value)
+
+    w_sheet.write(r_sheet.nrows, 0, info['time'])
+    w_sheet.write(r_sheet.nrows, 1, info['company_name'])
+    w_sheet.write(r_sheet.nrows, 2, info['job_title'])
+    w_sheet.write(r_sheet.nrows, 3, info['contact_name'])
+    w_sheet.write(r_sheet.nrows, 4, info['contact_address'])
+    w_sheet.write(r_sheet.nrows, 5, info['recip_email'])
+    w_sheet.write(r_sheet.nrows, 6, info['att_trans'])
+    w_sheet.write(r_sheet.nrows, 7, info['att_gre'])
+    write_book.save('./Personal_Data/log.xls')
 
 def sendEmail( recip_email, subject, msg):
     # Every email address should render the CV template and load info
@@ -93,7 +124,8 @@ def main():
     for info in info_list:
         msg = render_CL(info)
         subject = 'Application for %s from %s' % (info['job_title'], real_name)
-        sendEmail( info['recip_email'], subject, msg)
+        #sendEmail( info['recip_email'], subject, msg)
+        gen_log(info)
 
 if __name__ == '__main__':
     main()
