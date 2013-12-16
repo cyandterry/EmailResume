@@ -2,46 +2,64 @@
 import smtplib
 import os
 from email.mime.text import MIMEText
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEBase import MIMEBase
 from xlutils.copy import copy
 from xlwt import Workbook, easyxf
 from xlrd import open_workbook, cellname
 from time import gmtime, strftime
 import datetime
 import argparse
+from email import Encoders
 
 username  = None
 password  = None
 real_name = None
-
-parser = argparse.ArgumentParser(description="An argparse example")
-parser.add_argument('action', help='The action to take (e.g. install, remove, etc.)')
-parser.add_argument('foo-bar', help='Hyphens are cumbersome in positional arguments')
+DEBUG = True
+parser = argparse.ArgumentParser(description='Send Email Applications')
+parser.add_argument('-g', '--gen', help='generate tempate excels', action='store_true')
+parser.add_argument('-c', '--commit', help='commit mode, otherwise will not send the email', action='store_true')
 
 args = parser.parse_args()
 
-def gen_temp():
-    app_book = Workbook(encoding='utf-8')
-    sheet1 = app_book.add_sheet('Application Info')
-    sheet1.write(0, 0, 'Company Name')
-    sheet1.write(0, 1, 'Job Title')
-    sheet1.write(0, 2, 'Contact Name')
-    sheet1.write(0, 3, 'Contact Address')
-    sheet1.write(0, 4, 'Recipient Email')
-    sheet1.write(0, 5, 'Transcript')
-    sheet1.write(0, 6, 'GRE')
-    app_book.save('./Personal_Data/application_info.xls')
+def gen_temp(gen_type):
+    # type = 1, generate app_info excel
+    # type = 2, generate log_info excel
+    # type = 3, clean all so generate both
+    def gen_app_temp():
+        app_book = Workbook(encoding='utf-8')
+        sheet1 = app_book.add_sheet('Application Info')
+        sheet1.write(0, 0, 'Company Name')
+        sheet1.write(0, 1, 'Job Title')
+        sheet1.write(0, 2, 'Contact Name')
+        sheet1.write(0, 3, 'Contact Address')
+        sheet1.write(0, 4, 'Recipient Email')
+        sheet1.write(0, 5, 'Transcript')
+        sheet1.write(0, 6, 'GRE')
+        sheet1.write(0, 7, 'Template No')
+        app_book.save('./Personal_Data/application_info.xls')
 
-    log_book = Workbook(encoding='utf-8')
-    sheet2 = log_book.add_sheet('Application Info')
-    sheet2.write(0, 0, 'Time')
-    sheet2.write(0, 1, 'Company Name')
-    sheet2.write(0, 2, 'Job Title')
-    sheet2.write(0, 3, 'Contact Name')
-    sheet2.write(0, 4, 'Contact Address')
-    sheet2.write(0, 5, 'Recipient Email')
-    sheet2.write(0, 6, 'Transcript')
-    sheet2.write(0, 7, 'GRE')
-    log_book.save('./Personal_Data/log.xls')
+    def gen_log_temp():
+        log_book = Workbook(encoding='utf-8')
+        sheet2 = log_book.add_sheet('Application Info')
+        sheet2.write(0, 0, 'Time')
+        sheet2.write(0, 1, 'Company Name')
+        sheet2.write(0, 2, 'Job Title')
+        sheet2.write(0, 3, 'Contact Name')
+        sheet2.write(0, 4, 'Contact Address')
+        sheet2.write(0, 5, 'Recipient Email')
+        sheet2.write(0, 6, 'Transcript')
+        sheet2.write(0, 7, 'GRE')
+        sheet2.write(0, 8, 'Template No')
+        log_book.save('./Personal_Data/log.xls')
+
+    if gen_type == 1:
+        gen_app_temp()
+    elif gen_type == 2:
+        gen_log_temp()
+    elif gen_type == 3:
+        gen_app_temp()
+        gen_log_temp()
 
 def extract_application():
     # Should return a list of dicts
@@ -52,6 +70,7 @@ def extract_application():
     # 5. recip_email
     # 6. attach transcript
     # 7. attach GRE
+    # 8. template no.
     read_book = open_workbook('./Personal_Data/application_info.xls')
     r_sheet = read_book.sheet_by_index(0)
     info_list = []
@@ -64,6 +83,7 @@ def extract_application():
             recip_email     = r_sheet.cell(row_index, 4).value,
             att_trans       = r_sheet.cell(row_index, 5).value,
             att_gre         = r_sheet.cell(row_index, 6).value,
+            template_no     = '%d' % r_sheet.cell(row_index, 7).value,
             ))
     return info_list
 
@@ -79,18 +99,35 @@ def read_gmail_account():
     f.close()
 
 def render_CL(info):
-    fp = open('./Personal_Data/CL.html')
+    fp = open('./Personal_Data/CL_%s.html' % info['template_no'])
     str_data = fp.read()
     fp.close()
     date = datetime.date.today()
     info['date'] = '%s %d, %s' %(date.strftime('%b'), int(date.strftime('%d')), date.strftime('%Y'))
     info['time'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
     for key in info:
-        str_data = str_data.replace('{%%%s}' % key, info[key])
-    msg = MIMEText(str_data, 'html')
+        str_data = str_data.replace('{%%%s}' % key, str(info[key]))
+    msg = MIMEMultipart()
+    msg.attach(MIMEText(str_data, 'html'))
+    print msg
+    # Attachments
+    attach_list = ['Resume.pdf',]
+    if info['att_trans'] == 'Y':
+        attach_list.append('Transcript.pdf')
+    if info['att_gre'] == 'Y':
+        attach_list.append('GRE.pdf')
+    for attach in attach_list:
+        path = './Personal_Data/%s' % attach
+        part = MIMEBase('application', "octet-stream")
+        part.set_payload(open(path,'rb').read())
+        Encoders.encode_base64(part)
+        part.add_header('Content-Disposition', 'attachment; filename="%s"'
+                   % os.path.basename(path))
+        msg.attach(part)
     return msg
 
 def gen_log(info):
+    # Generate log info
     read_book = open_workbook('./Personal_Data/log.xls')
     r_sheet = read_book.sheet_by_index(0)
     write_book = copy(read_book)
@@ -111,30 +148,46 @@ def gen_log(info):
     w_sheet.write(r_sheet.nrows, 7, info['att_gre'])
     write_book.save('./Personal_Data/log.xls')
 
+    # Clean up the app_info excel
+
 def sendEmail( recip_email, subject, msg):
     # Every email address should render the CV template and load info
     msg['To'] = recip_email
     msg['Subject'] = subject
     msg['From'] = username
+    if args.commit:
+        server = smtplib.SMTP('smtp.gmail.com:587')
+        server.starttls()
+        server.ehlo()
+        server.login(username,password)
+    else:
+        server = smtplib.SMTP('127.0.0.1')
 
-    server = smtplib.SMTP('smtp.gmail.com:587')
-    server.starttls()
-    server.ehlo()
-    server.login(username,password)
     server.sendmail(msg['From'], [msg['To']], msg.as_string())
     server.quit()
 
 def main():
-
-
-    #gen_temp()
+    if args.gen:
+        print 'Generating Excel templates'
+        print 'Please fill in the template and run this app again'
+        gen_temp(3)
+        return
     read_gmail_account()
     info_list = extract_application()
     for info in info_list:
         msg = render_CL(info)
         subject = 'Application for %s from %s' % (info['job_title'], real_name)
-        #sendEmail( info['recip_email'], subject, msg)
+        sendEmail( info['recip_email'], subject, msg)
         gen_log(info)
+        #gen_temp(1)
 
 if __name__ == '__main__':
     main()
+
+# Things TO DO
+#Done 1. Add template choice
+#Done 2. Add Option parse
+# 3. Add error control
+#Done 4. Add attach
+#Done 5. Release the excel rows when the email is sent
+# 6. Add BCC
