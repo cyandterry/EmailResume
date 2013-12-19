@@ -109,7 +109,6 @@ def render_CL(info):
         str_data = str_data.replace('{%%%s}' % key, str(info[key]))
     msg = MIMEMultipart()
     msg.attach(MIMEText(str_data, 'html'))
-    print msg
     # Attachments
     attach_list = ['Resume.pdf',]
     if info['att_trans'] == 'Y':
@@ -162,8 +161,8 @@ def sendEmail( recip_email, subject, msg):
         server.login(username,password)
     else:
         server = smtplib.SMTP('127.0.0.1')
-
-    server.sendmail(msg['From'], [msg['To']], msg.as_string())
+    # Always bcc to self
+    server.sendmail(msg['From'], [msg['To'], username], msg.as_string())
     server.quit()
 
 def main():
