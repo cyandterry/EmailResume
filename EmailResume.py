@@ -15,10 +15,11 @@ from email import Encoders
 username  = None
 password  = None
 real_name = None
-DEBUG = True
+debug_mode = False
 parser = argparse.ArgumentParser(description='Send Email Applications')
 parser.add_argument('-g', '--gen', help='generate tempate excels', action='store_true')
 parser.add_argument('-c', '--commit', help='commit mode, otherwise will not send the email', action='store_true')
+parser.add_argument('-t', '--test', help='test mode, will send email to self instead', action='store_true')
 
 args = parser.parse_args()
 
@@ -96,6 +97,14 @@ def read_gmail_account():
     password = f.readline().split('=')[1].strip()
     global real_name
     real_name = f.readline().split('=')[1].strip()
+    '''
+    global test_mode
+    mode = f.readline().split('=')[1].strip()
+    if mode == 'True':
+        test_mode = True
+    elif mode == 'False':
+        test_mode = False
+    '''        
     f.close()
 
 def render_CL(info):
@@ -154,21 +163,32 @@ def sendEmail( recip_email, subject, msg):
     msg['To'] = recip_email
     msg['Subject'] = subject
     msg['From'] = username
-    if args.commit:
-        server = smtplib.SMTP('smtp.gmail.com:587')
-        server.starttls()
-        server.ehlo()
-        server.login(username,password)
-    else:
+
+    # Different modes:
+
+    # Debug mode, send to 127.0.0.1, normall send
+    if debug_mode:
         server = smtplib.SMTP('127.0.0.1')
+        server.sendmail(msg['From'], [msg['To'], username], msg.as_string())
+        server.quit()
+        return
+    # Test mode, send to google, but only self
+    server = smtplib.SMTP('smtp.gmail.com:587')
+    server.starttls()
+    server.ehlo()
+    server.login(username,password)
     # Always bcc to self
-    server.sendmail(msg['From'], [msg['To'], username], msg.as_string())
+    if args.test:
+        server.sendmail(msg['From'], [username,], msg.as_string())
+    else:
+        server.sendmail(msg['From'], [msg['To'], username,], msg.as_string())
     server.quit()
 
 def main():
     if args.gen:
         print 'Generating Excel templates'
         print 'Please fill in the template and run this app again'
+        # Going to clean all
         gen_temp(3)
         return
     read_gmail_account()
@@ -178,7 +198,8 @@ def main():
         subject = 'Application for %s from %s' % (info['job_title'], real_name)
         sendEmail( info['recip_email'], subject, msg)
         gen_log(info)
-        #gen_temp(1)
+        if not args.test:
+            gen_temp(1)
 
 if __name__ == '__main__':
     main()
@@ -189,4 +210,4 @@ if __name__ == '__main__':
 # 3. Add error control
 #Done 4. Add attach
 #Done 5. Release the excel rows when the email is sent
-# 6. Add BCC
+#Done 6. Add BCC, now always bcc to self
