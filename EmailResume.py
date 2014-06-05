@@ -101,6 +101,8 @@ def read_gmail_account():
     password = f.readline().split('=')[1].strip()
     global real_name
     real_name = f.readline().split('=')[1].strip()
+    global send_from
+    send_from = f.readline().split('=')[1].strip()
     f.close()
 
 def render_CL(info):
@@ -158,7 +160,7 @@ def sendEmail( recip_email, subject, msg):
     # Every email address should render the CV template and load info
     msg['To'] = recip_email
     msg['Subject'] = subject
-    msg['From'] = 'yc859@cornell.edu'
+    msg['From'] = send_from
 
     # Different modes:
 
