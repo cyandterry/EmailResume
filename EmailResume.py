@@ -15,7 +15,7 @@ from email import Encoders
 username  = None
 password  = None
 real_name = None
-debug_mode = False
+debug_mode = True
 parser = argparse.ArgumentParser(description='Send Email Applications')
 parser.add_argument('-g', '--gen', help='generate template excels', action='store_true')
 parser.add_argument('-c', '--commit', help='commit mode, otherwise will not send the email', action='store_true')
@@ -38,7 +38,7 @@ def gen_temp(gen_type):
         sheet1.write(0, 5, 'Transcript')
         sheet1.write(0, 6, 'GRE')
         sheet1.write(0, 7, 'Template No')
-        app_book.save('./Personal_Data/application_info.xls')
+        app_book.save('./application_info.xls')
 
     def gen_log_temp():
         log_book = Workbook(encoding='utf-8')
@@ -72,10 +72,14 @@ def extract_application():
     # 6. attach transcript
     # 7. attach GRE
     # 8. template no.
-    read_book = open_workbook('./Personal_Data/application_info.xls')
+    read_book = open_workbook('./application_info.xls')
     r_sheet = read_book.sheet_by_index(0)
     info_list = []
     for row_index in range(1, r_sheet.nrows):
+        if len(r_sheet.cell(row_index, 7).value.strip()) == 0:
+            temp_no = 1         # Default template No
+        else:
+            temp_no = r_sheet.cell(row_index, 7).value
         info_list.append( dict(
             company_name    = r_sheet.cell(row_index, 0).value,
             job_title       = r_sheet.cell(row_index, 1).value,
@@ -84,7 +88,7 @@ def extract_application():
             recip_email     = r_sheet.cell(row_index, 4).value,
             att_trans       = r_sheet.cell(row_index, 5).value,
             att_gre         = r_sheet.cell(row_index, 6).value,
-            template_no     = '%d' % r_sheet.cell(row_index, 7).value,
+            template_no     = '%d' % temp_no,
             ))
     return info_list
 
@@ -97,14 +101,6 @@ def read_gmail_account():
     password = f.readline().split('=')[1].strip()
     global real_name
     real_name = f.readline().split('=')[1].strip()
-    '''
-    global test_mode
-    mode = f.readline().split('=')[1].strip()
-    if mode == 'True':
-        test_mode = True
-    elif mode == 'False':
-        test_mode = False
-    '''        
     f.close()
 
 def render_CL(info):

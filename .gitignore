@@ -40,3 +40,5 @@ nosetests.xml
 
 # for personal information
 Personal_Data/*
+application_info.xls
+dummy_smtp.py
