@@ -17,7 +17,7 @@ password  = None
 real_name = None
 debug_mode = False
 parser = argparse.ArgumentParser(description='Send Email Applications')
-parser.add_argument('-g', '--gen', help='generate tempate excels', action='store_true')
+parser.add_argument('-g', '--gen', help='generate template excels', action='store_true')
 parser.add_argument('-c', '--commit', help='commit mode, otherwise will not send the email', action='store_true')
 parser.add_argument('-t', '--test', help='test mode, will send email to self instead', action='store_true')
 
