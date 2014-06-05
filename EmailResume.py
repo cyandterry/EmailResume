@@ -158,7 +158,7 @@ def sendEmail( recip_email, subject, msg):
     # Every email address should render the CV template and load info
     msg['To'] = recip_email
     msg['Subject'] = subject
-    msg['From'] = username
+    msg['From'] = 'yc859@cornell.edu'
 
     # Different modes:
 
@@ -198,6 +198,7 @@ def main():
             gen_temp(1)
 
 if __name__ == '__main__':
+    print 'Debug mode is %s' % debug_mode
     main()
 
 # Things TO DO
